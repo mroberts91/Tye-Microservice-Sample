@@ -1,0 +1,162 @@
+@page "/"
+@page "/dashboard"
+@using Microsoft.Extensions.Logging
+@using System.Text.Json
+@inject MetricsManager Metrics
+@inject ILogger<Index> Logg
+
+<div>
+    <h2 class="text-center" style="font-weight: 600;">Metrics</h2>
+    <p class="text-center">Last Updated: @(LastUpdated?.ToString() ?? "Gathering Metrics ...")</p>
+</div>
+<br />
+<br />
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); grid-gap: 2em;">
+    @if (_requestServiceDataset != null)
+    {
+        <TelerikChart OnSeriesClick="@OnSeriesClick">
+            <ChartLegend Visible="true" Position="@(ChartLegendPosition.Top)" />
+            <ChartSeriesItems>
+                @foreach (var serviceData in _requestServiceDataset)
+                {
+                    <ChartSeries Type="@(ChartSeriesType.Line)" Data="@serviceData.Value"
+                                 Field="@( nameof(RequestPerformanceMetric.CompletionMilliseconds) )"
+                                 CategoryField="@( nameof(RequestPerformanceMetric.RequestTimeUtc) )"
+                                 Style="@ChartSeriesStyle.Smooth"
+                                 Name="@serviceData.Key">
+                        <ChartSeriesLine Style="@ChartSeriesLineStyle.Smooth" />
+                    </ChartSeries>
+                }
+            </ChartSeriesItems>
+            <ChartCategoryAxes>
+                <ChartCategoryAxis Type="@ChartCategoryAxisType.Date"
+                                   BaseUnit="@ChartCategoryAxisBaseUnit.Minutes"
+                                   BaseUnitStep="1"
+                                   MaxDateGroups="20">
+                    <ChartCategoryAxisLabels Format="dd/yyyy">
+                        <ChartCategoryAxisLabels Step="5"></ChartCategoryAxisLabels>
+                    </ChartCategoryAxisLabels>
+                    <ChartCategoryAxisMajorGridLines Visible="true" />
+                    <ChartCategoryAxisMinorGridLines Visible="true" />
+                </ChartCategoryAxis>
+            </ChartCategoryAxes>
+            <ChartTooltip Visible="true">
+                <Template>
+                    <p>Request Milliseconds: @( (context.DataItem as RequestPerformanceMetric).CompletionMilliseconds.ToString() )</p>
+                    <p>Time: @( (context.DataItem as RequestPerformanceMetric).RequestTimeUtc.ToShortTimeString() )</p>
+                </Template>
+            </ChartTooltip>
+        </TelerikChart>
+    }
+    @if (_requestTypeDataset != null)
+    {
+        <TelerikChart OnSeriesClick="@OnSeriesClick">
+            <ChartLegend Visible="true" Position="@(ChartLegendPosition.Top)" />
+            <ChartSeriesItems>
+                @foreach (var serviceData in _requestTypeDataset)
+                {
+                    <ChartSeries Type="@(ChartSeriesType.Line)" Data="@serviceData.Value"
+                                 Field="@( nameof(RequestPerformanceMetric.CompletionMilliseconds) )"
+                                 CategoryField="@( nameof(RequestPerformanceMetric.RequestTimeUtc) )"
+                                 Style="@ChartSeriesStyle.Smooth"
+                                 Name="@serviceData.Key">
+                        <ChartSeriesLine Style="@ChartSeriesLineStyle.Smooth" />
+                    </ChartSeries>
+                }
+            </ChartSeriesItems>
+            <ChartCategoryAxes>
+                <ChartCategoryAxis Type="@ChartCategoryAxisType.Date"
+                                   BaseUnit="@ChartCategoryAxisBaseUnit.Minutes"
+                                   BaseUnitStep="1"
+                                   MaxDateGroups="20">
+                    <ChartCategoryAxisLabels Format="dd/yyyy">
+                        <ChartCategoryAxisLabels Step="5"></ChartCategoryAxisLabels>
+                    </ChartCategoryAxisLabels>
+                    <ChartCategoryAxisMajorGridLines Visible="true" />
+                    <ChartCategoryAxisMinorGridLines Visible="true" />
+                </ChartCategoryAxis>
+            </ChartCategoryAxes>
+            <ChartTooltip Visible="true">
+                <Template>
+                    <p>Request Milliseconds: @( (context.DataItem as RequestPerformanceMetric).CompletionMilliseconds.ToString() )</p>
+                    <p>Time: @( (context.DataItem as RequestPerformanceMetric).RequestTimeUtc.ToShortTimeString() )</p>
+                </Template>
+            </ChartTooltip>
+        </TelerikChart>
+    }
+    @if (_requestServiceDataset != null)
+    {
+        <TelerikChart OnSeriesClick="@OnSeriesClick">
+            <ChartLegend Visible="true" Position="@(ChartLegendPosition.Top)" />
+            <ChartSeriesItems>
+                @foreach (var serviceData in _requestServiceDataset)
+                {
+                    <ChartSeries Type="@(ChartSeriesType.Line)" Data="@serviceData.Value"
+                                 Field="@( nameof(RequestPerformanceMetric.CompletionMilliseconds) )"
+                                 CategoryField="@( nameof(RequestPerformanceMetric.RequestTimeUtc) )"
+                                 Style="@ChartSeriesStyle.Smooth"
+                                 Name="@serviceData.Key"
+                                 Aggregate="@(ChartSeriesAggregate.Count)">
+                        <ChartSeriesLine Style="@ChartSeriesLineStyle.Smooth" />
+                    </ChartSeries>
+                }
+            </ChartSeriesItems>
+            <ChartCategoryAxes>
+                <ChartCategoryAxis Type="@ChartCategoryAxisType.Date"
+                                   BaseUnit="@ChartCategoryAxisBaseUnit.Minutes"
+                                   BaseUnitStep="1"
+                                   MaxDateGroups="20">
+                    <ChartCategoryAxisLabels Format="dd/yyyy">
+                        <ChartCategoryAxisLabels Step="5"></ChartCategoryAxisLabels>
+                    </ChartCategoryAxisLabels>
+                    <ChartCategoryAxisMajorGridLines Visible="true" />
+                    <ChartCategoryAxisMinorGridLines Visible="true" />
+                </ChartCategoryAxis>
+            </ChartCategoryAxes>
+            <ChartTooltip Visible="true">
+                <Template>
+                    <p>Request Count: @context.FormattedValue</p>
+                    <p>Time: @( (context.DataItem as RequestPerformanceMetric).RequestTimeUtc.ToShortTimeString() )</p>
+                </Template>
+            </ChartTooltip>
+        </TelerikChart>
+    }
+</div>
+
+
+@code {
+    private readonly int _chartCount = 6;
+    private TelerikChart _chartRef = new();
+    private IDictionary<string,IEnumerable<RequestPerformanceMetric>> _requestServiceDataset;
+    private IDictionary<string,IEnumerable<RequestPerformanceMetric>> _requestTypeDataset;
+    public DateTime? LastUpdated => Metrics.LastUpdated;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Metrics.MetricsUpdated += OnMetricsUpdated;
+            InitializeDatasets();
+        }
+    }
+
+    private void InitializeDatasets()
+    {
+        InvokeAsync(() => 
+        {
+            _requestServiceDataset = Metrics.Metrics?.GroupBy(m => m.ServiceName).ToDictionary(k => k.Key, v => v.Select(m => m));
+            _requestTypeDataset = Metrics.Metrics?.GroupBy(m => m.HttpMethod).ToDictionary(k => k.Key, v => v.Select(m => m));
+            StateHasChanged();
+        });
+    }
+
+    private void OnSeriesClick(ChartSeriesClickEventArgs args)
+    {
+        Logg.LogInformation(JsonSerializer.Serialize(args));
+    }
+
+    private void OnMetricsUpdated(object sender, MetricsUpdateEventArgs args)
+    {
+        InitializeDatasets();
+    }
+}

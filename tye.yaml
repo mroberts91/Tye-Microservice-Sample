@@ -1,0 +1,120 @@
+# tye application configuration file
+# read all about it at https://github.com/dotnet/tye
+#
+# define global settings here
+# name: exampleapp # application name
+# registry: exampleuser # dockerhub username or container registry hostname
+
+# define multiple services here
+name: ServiceMonitor
+extensions:
+- name: dapr
+  log-level: debug
+  # config allows you to pass additional configuration into the dapr sidecar
+  # config will be interpreted as a named k8s resource when deployed, and will be interpreted as
+  # a file on disk when running locally at `./components/myconfig.yaml`
+  # config: myconfig
+  # components-path configures the components path of the dapr sidecard
+  components-path: "./components/"
+ingress:
+  - name: ingress
+    bindings:
+      - name: httpingress
+        port: 80
+        protocol: http
+      - name: httpsingress
+        port: 443
+        protocol: https
+    rules:
+      - path: /a
+        service: servicea
+      - path: /b
+        service: serviceb
+      - path: /
+        service: dashboard
+      - path: /dashboard
+        service: dashboard
+
+services:
+- name: servicea
+  project: src/ServiceA/ServiceA.csproj
+  env:
+    - name: AppName
+      value: ServiceA
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: serviceb
+  project: src/ServiceB/ServiceB.csproj
+  env:
+    - name: AppName
+      value: ServiceB
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: internala
+  project: src/InternalA/InternalA.csproj
+  env:
+    - name: AppName
+      value: InternalA
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: auditservice
+  project: src/AuditService/AuditService.csproj
+  env:
+    - name: AppName
+      value: AuditService
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: monitorservice
+  project: src/MonitorService/MonitorService.csproj
+  env:
+    - name: AppName
+      value: MonitorService
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: requestworker
+  project: src/RequestWorker/RequestWorker.csproj
+  env:
+    - name: AppName
+      value: RequestWorker
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: dashboard
+  project: src/Dashboard/Dashboard.csproj
+  env:
+    - name: AppName
+      value: Dashboard
+  env_file:
+    - ./pubsub.env
+    - ./statestore.env
+
+- name: placement
+  image: daprio/dapr
+  args: ./placement
+  bindings:
+    - port: 50005
+
+# - name: postgres
+#   image:  postgres
+#   env:
+#   - name: POSTGRES_PASSWORD
+#     value: "pass@word1"
+#   bindings:
+#   - port: 5432
+#     connectionString: Server=${host};Port=${port};User Id=postgres;Password=${env:POSTGRES_PASSWORD};
+# - name: redis
+#   image: redis
+#   bindings:
+#     - port: 6379
+#       connectionString: ${host}:${port}
